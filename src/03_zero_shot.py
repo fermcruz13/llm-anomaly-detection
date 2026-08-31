@@ -1,99 +1,99 @@
-# ETAPA 3: Inferência Zero-Shot
-# O modelo classifica logs como normal/anômalo sem exemplos prévios
+# 03_zero_shot.py
+# Inferencia zero-shot no BGL e HDFS
 
-import time
 import torch
+import time
 import json
+import pandas as pd
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+from src_02_load_model import load_model
 
-def zero_shot_inference_instruct(model, tokenizer, sequences, max_length=512):
-    """
-    Zero-shot usando o template de chat do LLaMA-3-Instruct.
-    """
-    results = []
-    
-    system_prompt = """You are a cybersecurity log analyzer. Your task is to classify log sequences as NORMAL or ANOMALOUS.
-ANOMALOUS sequences contain: error messages, kernel alerts, fatal errors, failed connections, authentication failures, or unexpected system behavior.
-NORMAL sequences contain: routine operations, informational messages, or successful transactions.
-Respond with only one word: NORMAL or ANOMALOUS."""
+SYSTEM_PROMPT = "You are a cybersecurity log analyzer. Classify log sequences as NORMAL or ANOMALOUS. Respond with only one word."
 
+def zero_shot_inference(model, tokenizer, sequences):
     model.eval()
-    print(f"  Processando {len(sequences)} sequencias...")
-    
-    for i, seq in enumerate(sequences):
-        user_message = f"Classify the following log sequence as NORMAL or ANOMALOUS:\n\n{str(seq)[:400]}"
-        
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ]
-        
-        prompt = tokenizer.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=False
-        )
-        
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_length)
-        inputs = {k: v.to(model.device) for k, v in inputs.items()}
-        
-        with torch.no_grad():
+    preds = []
+
+    with torch.no_grad():
+        for i, seq in enumerate(sequences):
+            messages = [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Classify this log sequence:\n{str(seq)[:300]}"}
+            ]
+
+            prompt = tokenizer.apply_chat_template(
+                messages, add_generation_prompt=True, tokenize=False
+            )
+
+            inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
+            inputs = {k: v.to(model.device) for k, v in inputs.items()}
+
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=10,
+                max_new_tokens=5,
+                do_sample=False,
                 temperature=0.1,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id
+                pad_token_id=tokenizer.pad_token_id,
             )
-        
-        response = tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True).strip()
-        
-        if 'ANOMAL' in response.upper():
-            prediction = 1
-        else:
-            prediction = 0
-        
-        results.append(prediction)
-        
-        if (i + 1) % 50 == 0:
-            print(f"    Processadas: {i+1}/{len(sequences)}")
-    
-    return results
 
-print("=" * 60)
-print("ZERO-SHOT COM LLAMA-3-8B-INSTRUCT")
-print("=" * 60)
-print()
+            response = tokenizer.decode(
+                outputs[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True
+            ).strip()
 
-# BGL
-print("Dataset BGL - Zero-Shot (Instruct):")
-start_time = time.time()
-bgl_zs_preds = zero_shot_inference_instruct(model, tokenizer, bgl_test_sequences)
-bgl_zs_time = time.time() - start_time
+            pred = 1 if "ANOMAL" in response.upper() else 0
+            preds.append(pred)
 
-print(f"  Tempo total: {bgl_zs_time:.1f}s")
-print(f"  Tempo por sequencia: {bgl_zs_time/len(bgl_test_sequences)*1000:.1f}ms")
-print()
+            if (i + 1) % 100 == 0:
+                print(f"  Processadas: {i+1}/{len(sequences)}")
 
-# HDFS
-print("Dataset HDFS - Zero-Shot (Instruct):")
-start_time = time.time()
-hdfs_zs_preds = zero_shot_inference_instruct(model, tokenizer, hdfs_test_sequences)
-hdfs_zs_time = time.time() - start_time
+    return preds
 
-print(f"  Tempo total: {hdfs_zs_time:.1f}s")
-print(f"  Tempo por sequencia: {hdfs_zs_time/len(hdfs_test_sequences)*1000:.1f}ms")
+def calculate_metrics(y_true, y_pred, dataset_name):
+    precision = precision_score(y_true, y_pred, zero_division=0)
+    recall = recall_score(y_true, y_pred, zero_division=0)
+    f1 = f1_score(y_true, y_pred, zero_division=0)
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+    fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
 
-# Salvar
-zs_results = {
-    'bgl_predictions': bgl_zs_preds,
-    'bgl_labels': bgl_test_labels,
-    'bgl_time': bgl_zs_time,
-    'hdfs_predictions': hdfs_zs_preds,
-    'hdfs_labels': hdfs_test_labels,
-    'hdfs_time': hdfs_zs_time
-}
+    print(f"\n  {dataset_name}:")
+    print(f"    Precision: {precision:.4f}")
+    print(f"    Recall:    {recall:.4f}")
+    print(f"    F1-Score:  {f1:.4f}")
+    print(f"    FPR:       {fpr:.4f}")
 
-with open('/content/datasets/zero_shot_instruct_results.json', 'w') as f:
-    json.dump(zs_results, f)
+    return {
+        "precision": float(precision), "recall": float(recall),
+        "f1": float(f1), "fpr": float(fpr),
+        "tp": int(tp), "fp": int(fp), "tn": int(tn), "fn": int(fn)
+    }
 
-print("\nResultados zero-shot (Instruct) salvos!")
+if __name__ == "__main__":
+    model, tokenizer = load_model()
+
+    bgl_test = pd.read_csv("data/bgl_test.csv")
+    hdfs_test = pd.read_csv("data/hdfs_test.csv")
+
+    bgl_seqs = bgl_test['sequence'].tolist()
+    bgl_labels = bgl_test['label'].tolist()
+    hdfs_seqs = hdfs_test['sequence'].tolist()
+    hdfs_labels = hdfs_test['label'].tolist()
+
+    print("\n=== ZERO-SHOT BGL ===")
+    start = time.time()
+    bgl_preds = zero_shot_inference(model, tokenizer, bgl_seqs)
+    bgl_time = time.time() - start
+    bgl_metrics = calculate_metrics(bgl_labels, bgl_preds, "BGL (Zero-Shot)")
+    bgl_metrics["total_time"] = float(bgl_time)
+
+    print("\n=== ZERO-SHOT HDFS ===")
+    start = time.time()
+    hdfs_preds = zero_shot_inference(model, tokenizer, hdfs_seqs)
+    hdfs_time = time.time() - start
+    hdfs_metrics = calculate_metrics(hdfs_labels, hdfs_preds, "HDFS (Zero-Shot)")
+    hdfs_metrics["total_time"] = float(hdfs_time)
+
+    results = {"bgl": bgl_metrics, "hdfs": hdfs_metrics}
+    with open("results/zero_shot_results.json", "w") as f:
+        json.dump(results, f, indent=2)
+
+    print("\nResultados salvos em results/zero_shot_results.json")
