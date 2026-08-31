@@ -45,7 +45,7 @@ O pipeline é estruturado em quatro camadas operacionais desacopladas:
 
 ## Instalação
 
-    git clone https://github.com/usuario/llm-anomaly-detection.git
+    git clone https://github.com/fermcruz13/llm-anomaly-detection.git
     cd llm-anomaly-detection
     pip install -r requirements.txt
     huggingface-cli login
