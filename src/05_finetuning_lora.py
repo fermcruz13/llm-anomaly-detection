@@ -7,7 +7,14 @@ import pandas as pd
 from datasets import Dataset
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
 from transformers import TrainingArguments, Trainer, DataCollatorForSeq2Seq
-from src_02_load_model import load_model
+import importlib.util
+import sys
+import os
+
+spec = importlib.util.spec_from_file_location("load_model", os.path.join(os.path.dirname(__file__), "02_load_model.py"))
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+load_model = mod.load_model
 
 import warnings
 warnings.filterwarnings('ignore')
