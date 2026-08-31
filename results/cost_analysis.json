@@ -1,0 +1,70 @@
+{
+  "gpu": {
+    "name": "NVIDIA Tesla T4",
+    "total_memory_gb": 14.6,
+    "allocated_memory_gb": 6.1,
+    "utilization_pct": 41.8
+  },
+  "model": {
+    "total_params": 8030261248,
+    "trainable_params": 20971520,
+    "trainable_pct": 0.26,
+    "adapter_size_mb": 84.0
+  },
+  "strategies": {
+    "Zero-Shot": {
+      "bgl": {
+        "total_time_s": 653.9,
+        "n_sequences": 1100,
+        "latency_ms_per_seq": 594.45,
+        "throughput_seqs_per_sec": 1.68
+      },
+      "hdfs": {
+        "total_time_s": 736.9,
+        "n_sequences": 1680,
+        "latency_ms_per_seq": 438.63,
+        "throughput_seqs_per_sec": 2.28
+      }
+    },
+    "Few-Shot": {
+      "bgl": {
+        "total_time_s": 942.7,
+        "n_sequences": 1100,
+        "latency_ms_per_seq": 857.0,
+        "throughput_seqs_per_sec": 1.17
+      },
+      "hdfs": {
+        "total_time_s": 1586.6,
+        "n_sequences": 1680,
+        "latency_ms_per_seq": 944.4,
+        "throughput_seqs_per_sec": 1.06
+      }
+    },
+    "Fine-Tuning LoRA": {
+      "bgl": {
+        "total_time_s": 394.5,
+        "n_sequences": 1100,
+        "latency_ms_per_seq": 358.64,
+        "throughput_seqs_per_sec": 2.79
+      },
+      "hdfs": {
+        "total_time_s": 563.5,
+        "n_sequences": 1680,
+        "latency_ms_per_seq": 335.42,
+        "throughput_seqs_per_sec": 2.98
+      }
+    }
+  },
+  "training": {
+    "epochs_configured": 3,
+    "epochs_executed": 0.58,
+    "batch_size": 4,
+    "gradient_accumulation": 4,
+    "effective_batch_size": 16,
+    "learning_rate": 0.0002,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "optimizer": "paged_adamw_8bit",
+    "precision": "FP16 (4-bit NF4)"
+  }
+}
