@@ -6,7 +6,14 @@ import time
 import json
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
-from src_02_load_model import load_model
+import importlib.util
+import sys
+import os
+
+spec = importlib.util.spec_from_file_location("load_model", os.path.join(os.path.dirname(__file__), "02_load_model.py"))
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+load_model = mod.load_model
 
 SYSTEM_PROMPT = "You are a cybersecurity log analyzer. Classify log sequences as NORMAL or ANOMALOUS. Respond with only one word."
 
