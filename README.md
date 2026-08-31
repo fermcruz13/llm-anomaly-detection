@@ -78,7 +78,6 @@ O fine-tuning com LoRA utiliza:
 ### Tabela III: Métricas de Detecção
 
 | Estratégia | Dataset | Precision | Recall | F1-Score | FPR |
-|---|---|---|---|---|---|
 | Zero-Shot | BGL | 0.0849 | 0.9875 | 0.1563 | 0.9261 |
 | Zero-Shot | HDFS | 1.0000 | 0.3750 | 0.5455 | 0.0000 |
 | Few-Shot | BGL | 0.0912 | 0.9125 | 0.1659 | 0.7902 |
