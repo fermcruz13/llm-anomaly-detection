@@ -1,0 +1,26 @@
+{
+  "bgl": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "fpr": 0.0,
+    "tp": 80,
+    "fp": 0,
+    "tn": 1020,
+    "fn": 0,
+    "total_time": 394.5,
+    "avg_time_per_seq": 0.3586
+  },
+  "hdfs": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "fpr": 0.0,
+    "tp": 80,
+    "fp": 0,
+    "tn": 1600,
+    "fn": 0,
+    "total_time": 563.5,
+    "avg_time_per_seq": 0.3354
+  }
+}
