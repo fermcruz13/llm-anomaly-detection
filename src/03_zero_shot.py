@@ -6,14 +6,53 @@ import time
 import json
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
-import importlib.util
-import sys
-import os
+# import importlib.util
+# import sys
+# import os
 
-spec = importlib.util.spec_from_file_location("load_model", os.path.join(os.path.dirname(__file__), "02_load_model.py"))
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-load_model = mod.load_model
+# spec = importlib.util.spec_from_file_location("load_model", os.path.join(os.path.dirname(__file__), "02_load_model.py"))
+# mod = importlib.util.module_from_spec(spec)
+# spec.loader.exec_module(mod)
+# load_model = mod.load_model
+
+# --- START: Duplicating load_model definition from 02_load_model.py (cell NW1USdohvUao) ---
+# This is a workaround due to __file__ not being defined in Colab and 02_load_model.py not being a physical file.
+# In a modular setup, load_model should be imported from a separate file or be globally defined in a preceding cell.
+
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+
+def load_model():
+    model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
+
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_use_double_quant=True,
+    )
+
+    print(f"Carregando {model_name}...")
+    print("Download de ~5 GB (pode levar 3 a 8 minutos)...")
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        quantization_config=bnb_config,
+        device_map="auto",
+        trust_remote_code=True
+    )
+
+    model.eval()
+
+    gpu_memory = torch.cuda.memory_allocated() / (1024**3)
+    print(f"\nModelo carregado!")
+    print(f"Memoria GPU em uso: {gpu_memory:.1f} GB")
+
+    return model, tokenizer
+# --- END: Duplicating load_model definition ---
 
 SYSTEM_PROMPT = "You are a cybersecurity log analyzer. Classify log sequences as NORMAL or ANOMALOUS. Respond with only one word."
 
