@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+*.ipynb
+
+# LoRA adapter (gerado pelo treinamento)
+lora_output/
+*.bin
+*.safetensors
+
+# Datasets gerados (são regenerados pelo script 01)
+data/*.csv
+
+# Variáveis de ambiente e tokens
+.env
+*.token
+huggingface_token*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
